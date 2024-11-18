@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TextInput, Text, View, Button, Pressable, Modal, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { TextInput, Text, View, Button, Pressable, Modal, StyleSheet, TouchableOpacity, Image, ScrollView, Vibration } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
@@ -11,18 +11,61 @@ const tab = createBottomTabNavigator();
 const RootStack = createNativeStackNavigator();
 const Stack = createNativeStackNavigator();
 
-// Variável global para o carrinho
-let carrinho = [];
+// Carrinho como state global usando Context
+const CarrinhoContext = React.createContext();
 
-// Função para adicionar produto ao carrinho
-const adicionarAoCarrinho = (produto) => {
-  carrinho.push(produto);
-  console.log(carrinho); // Apenas para verificar se o produto foi adicionado
+const CarrinhoProvider = ({ children }) => {
+  const [carrinho, setCarrinho] = React.useState([]);
+
+  React.useEffect(() => {
+    // Carregar carrinho do AsyncStorage quando o app iniciar
+    const carregarCarrinho = async () => {
+      try {
+        const carrinhoSalvo = await AsyncStorage.getItem('carrinho');
+        if (carrinhoSalvo !== null) {
+          setCarrinho(JSON.parse(carrinhoSalvo));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar carrinho:', error);
+      }
+    };
+    carregarCarrinho();
+  }, []);
+
+  // Função para adicionar produto ao carrinho
+  const adicionarAoCarrinho = async (produto) => {
+    try {
+      const novoCarrinho = [...carrinho, produto];
+      setCarrinho(novoCarrinho);
+      await AsyncStorage.setItem('carrinho', JSON.stringify(novoCarrinho));
+      Vibration.vibrate(100); // Vibrar por 100ms
+    } catch (error) {
+      console.error('Erro ao salvar carrinho:', error);
+    }
+  };
+
+  // Função para limpar o carrinho
+  const limparCarrinho = async () => {
+    try {
+      setCarrinho([]);
+      await AsyncStorage.removeItem('carrinho');
+      Vibration.vibrate(200); // Vibrar por 200ms
+    } catch (error) {
+      console.error('Erro ao limpar carrinho:', error);
+    }
+  };
+
+  return (
+    <CarrinhoContext.Provider value={{ carrinho, adicionarAoCarrinho, limparCarrinho }}>
+      {children}
+    </CarrinhoContext.Provider>
+  );
 };
 
 // Função para exibir produtos de uma categoria
 const CategoriaPage = ({ route, navigation }) => {
   const { categoria } = route.params;
+  const { adicionarAoCarrinho } = React.useContext(CarrinhoContext);
 
   const produtos = {
     alimentos: [
@@ -54,13 +97,9 @@ const CategoriaPage = ({ route, navigation }) => {
       <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>Produtos de {categoria}</Text>
       {categoriaProdutos.map((produto) => (
         <View key={produto.id} style={styles.produtoItem}>
-          {/* Exibindo a imagem do produto */}
           <Image source={produto.imagem} style={styles.produtoImagem} />
-          
           <Text>{produto.nome}</Text>
           <Text>Preço: R${produto.preco}</Text>
-
-          {/* Botão para adicionar ao carrinho */}
           <TouchableOpacity
             style={styles.botaoProduto}
             onPress={() => adicionarAoCarrinho(produto)}>
@@ -74,6 +113,13 @@ const CategoriaPage = ({ route, navigation }) => {
 
 // Tela de Carrinho
 const MeuCarrinho = () => {
+  const { carrinho, limparCarrinho } = React.useContext(CarrinhoContext);
+
+  const finalizarCompra = async () => {
+    await limparCarrinho();
+    alert('Compra Finalizada!');
+  };
+
   if (carrinho.length === 0) {
     return (
       <View style={styles.carrinhoVazio}>
@@ -92,7 +138,7 @@ const MeuCarrinho = () => {
           <Text>Preço: R${produto.preco}</Text>
         </View>
       ))}
-      <TouchableOpacity style={styles.botaoProduto} onPress={() => alert('Compra Finalizada!')}>
+      <TouchableOpacity style={styles.botaoProduto} onPress={finalizarCompra}>
         <Text style={styles.botaoTexto}>Finalizar Compra</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -105,7 +151,7 @@ const MenuLogin = ({ navigation }) => {
   const [senha, setSenha] = React.useState('');
 
   const handleLogin = () => {
-    // Aqui você pode implementar o login (por enquanto, apenas navega para a tela inicial)
+    Vibration.vibrate(100);
     navigation.replace('Inicio');
   };
 
@@ -128,7 +174,11 @@ const MenuLogin = ({ navigation }) => {
       <TouchableOpacity style={styles.botao} onPress={handleLogin}>
         <Text style={styles.botaoTexto}>Entrar</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.navigate('Cadastro')}>
+      <TouchableOpacity 
+        onPress={() => {
+          Vibration.vibrate(100);
+          navigation.navigate('Cadastro');
+        }}>
         <Text style={styles.link}>Criar conta</Text>
       </TouchableOpacity>
     </View>
@@ -141,7 +191,7 @@ const MenuCadastro = ({ navigation }) => {
   const [senha, setSenha] = React.useState('');
 
   const handleCadastro = () => {
-    // Aqui você pode implementar o cadastro (por enquanto, apenas navega para a tela inicial)
+    Vibration.vibrate(100);
     navigation.replace('Inicio');
   };
 
@@ -216,7 +266,10 @@ const Inicio = ({ navigation }) => {
         <TouchableOpacity
           key={categoria.id}
           style={styles.categoriaButton}
-          onPress={() => navigation.navigate('Categoria', { categoria: categoria.id })}>
+          onPress={() => {
+            Vibration.vibrate(100);
+            navigation.navigate('Categoria', { categoria: categoria.id });
+          }}>
           <Text>{categoria.nome}</Text>
         </TouchableOpacity>
       ))}
@@ -226,18 +279,20 @@ const Inicio = ({ navigation }) => {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <RootStack.Navigator>
-        <RootStack.Screen name="Login" component={MenuLogin} />
-        <RootStack.Screen name="Cadastro" component={MenuCadastro} />
-        <RootStack.Screen name="Inicio" component={menuPrincipal} />
-        <RootStack.Screen name="Categoria" component={CategoriaPage} />
-      </RootStack.Navigator>
-    </NavigationContainer>
+    <CarrinhoProvider>
+      <NavigationContainer>
+        <RootStack.Navigator>
+          <RootStack.Screen name="Login" component={MenuLogin} />
+          <RootStack.Screen name="Cadastro" component={MenuCadastro} />
+          <RootStack.Screen name="Inicio" component={menuPrincipal} />
+          <RootStack.Screen name="Categoria" component={CategoriaPage} />
+        </RootStack.Navigator>
+      </NavigationContainer>
+    </CarrinhoProvider>
   );
 }
 
-// Estilos
+// Estilos permanecem os mesmos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -302,5 +357,11 @@ const styles = StyleSheet.create({
   },
   carrinhoContainer: {
     padding: 20,
+  },
+  categoriaButton: {
+    padding: 15,
+    marginVertical: 5,
+    backgroundColor: '#eaeaea',
+    borderRadius: 5,
   },
 });
