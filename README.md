@@ -48,4 +48,6 @@ Enfrentei dificuldades ao implementar o banco de dados no meu carrinho, que não
 ![Screenshot from 2024-11-18 23-03-57](https://github.com/user-attachments/assets/5698c925-a5c3-4b0b-8fce-0db0780f3e47)
 ![Screenshot from 2024-11-18 23-04-07](https://github.com/user-attachments/assets/926f47b4-4bcf-45b9-b856-83130b5d8667)
 ![Screenshot from 2024-11-18 23-04-16](https://github.com/user-attachments/assets/a36fc36a-af92-4f43-b0f1-5d9f6629f6c7)
+![Screenshot from 2024-11-18 23-04-22](https://github.com/user-attachments/assets/19a25cd5-e2b0-4b95-b334-49e17b806634)
+
 ![Screenshot from 2024-11-18 23-05-00](https://github.com/user-attachments/assets/94b25a29-7f46-4183-a1db-38dc4fe95c46)
